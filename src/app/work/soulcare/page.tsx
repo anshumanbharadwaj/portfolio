@@ -484,13 +484,21 @@ export default function SoulCareCaseStudy() {
                 <p className="text-stone-500 text-sm">See all screens, flows, components and design tokens.</p>
               </div>
               <a
-                href="https://www.figma.com/design/LhuhbyY1hTUTpfs5QczBAP/Untitled?node-id=32-229"
+                href="https://www.figma.com/design/bOyTC0HBRm7mLCcpshT2uB/SoulCare?node-id=874-410&m=dev"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-shrink-0 bg-[#2563EB] hover:bg-blue-700 transition-colors text-white font-bold text-sm px-8 py-4 rounded-2xl shadow-md"
               >
                 Open in Figma →
               </a>
+            </div>
+          </Section>
+
+          {/* ── Ongoing Work Note ────────────────────────── */}
+          <Section className="mt-12 mb-6 text-center">
+            <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-stone-50 border border-stone-200/80 text-stone-600 text-xs sm:text-sm font-medium shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>I&apos;m still working on this project</span>
             </div>
           </Section>
 
