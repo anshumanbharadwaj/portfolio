@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import SelectedWork from "@/components/SelectedWork";
 import Music from "@/components/Music";
+import InteractivePiano from "@/components/InteractivePiano";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 
@@ -13,6 +14,7 @@ export default function Home() {
         <Hero />
         <SelectedWork />
         <Music />
+        <InteractivePiano />
         <Contact />
       </main>
       <Footer />
