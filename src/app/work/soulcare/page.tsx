@@ -124,6 +124,12 @@ export default function SoulCareCaseStudy() {
               </div>
               {/* Description */}
               <div className="flex flex-col gap-6">
+                {/* Ongoing work badge above intro */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-800 text-xs font-medium self-start shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span>I&apos;m still working on this project</span>
+                </div>
+
                 {/* Real SoulCare logo */}
                 <div className="relative w-36 h-28">
                   <Image
