@@ -414,11 +414,16 @@ export default function SoulCareCaseStudy() {
 
             {/* Feature 2: Centralized health dashboard */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-20">
-              <div className="order-2 lg:order-1 flex justify-center">
+              <div className="order-2 lg:order-1 flex justify-center items-end gap-4 md:gap-6">
+                <PhoneImage
+                  src="/sc_phone_1_splash.png"
+                  alt="SoulCare initial splash screen"
+                  className="w-[42%] max-w-[180px]"
+                />
                 <PhoneImage
                   src="/sc_phone_2_dashboard.png"
                   alt="SoulCare dashboard screen"
-                  className="w-[52%] max-w-[220px]"
+                  className="w-[42%] max-w-[180px] mb-6"
                 />
               </div>
               <div className="order-1 lg:order-2">
