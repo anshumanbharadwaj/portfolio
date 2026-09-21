@@ -87,10 +87,10 @@ const SCREENS: ScreenItem[] = [
   {
     id: "caretaker_1",
     category: "caretaker",
-    title: "Caretaker App Entry",
-    hindiTitle: "अपना ख़याल — शुरू हो जाओ",
-    description: "Initial onboarding screen configured for adult child caregivers managing parental health.",
-    src: "/first-design/caretaker_1_splash.png",
+    title: "Initial Welcome Screen (Slide 16:9 - 1)",
+    hindiTitle: "SoulCare — Personalized healthcare",
+    description: "The initial welcome screen from Slide 16:9 - 1 introducing the platform with the SoulCare emblem and tagline before caregiver onboarding.",
+    src: "/sc_phone_1_splash.png",
     badge: "Caretaker Flow · 01",
   },
   {
