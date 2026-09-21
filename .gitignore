@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+netlify_deployment*
 
 # debug
 npm-debug.log*

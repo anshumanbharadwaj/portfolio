@@ -1,0 +1,82 @@
+SoulCare — Usability Testing Moderator Script
+1. Respondent Details
+	•	Name:
+	•	Age:
+	•	Occupation:
+	•	Experience with wellness / mental health apps:
+	•	Devices used (Phone / Tablet / Laptop):
+
+2. Moderator Introduction & Communication
+SoulCare is a mobile healthcare platform designed to reduce the mental, emotional, and logistical burden faced by adult children caring for elderly parents.
+The platform focuses on family coordination, medication adherence, and elder-friendly interaction, addressing gaps left by existing single-user health apps.
+
+3. Before We Start
+A. Purpose of the Test
+	•	Understand how users interact with SoulCare
+	•	Identify usability issues
+	•	Improve user experience and accessibility
+
+B. Confidentiality
+	•	Your data will remain confidential
+	•	The session may be recorded only for research purposes
+
+C. Test Structure & Duration
+	•	Total Time: ~30–45 minutes
+	•	Includes:
+	•	Background questions
+	•	Task-based testing
+	•	Feedback survey
+
+D. Think Aloud Protocol
+Please speak your thoughts while using the app:
+	•	What you expect to happen
+	•	What feels confusing
+	•	What feels easy or helpful
+
+E. Roles & Responsibilities
+Moderator
+	•	Guides session
+	•	Asks questions
+	•	Observes behaviour
+Participant
+	•	Uses app naturally
+	•	Shares honest thoughts
+	•	Asks questions if confused
+
+4. Background Questions (Interview Section)
+	•	How familiar are you with prescriptions and family wellbeing apps?
+	•	Do you currently track medicines, habits, or mental wellbeing?
+	•	What motivates you to use wellness apps?
+	•	What frustrates you about existing wellness apps?
+
+
+
+
+
+Tasks & Objectives
+Task
+Objective
+Sign up / Log in
+Check onboarding clarity
+Set mood or daily check-in
+Evaluate ease of emotional logging
+Find a self-care activity
+Test navigation & discoverability
+Start guided session
+Test content accessibility
+View progress or insights
+Test data visualization clarity
+
+6. Assistance Levels
+Level 1  User completes task independently
+Level 2  Moderator gives directional hint
+Level 3  Moderator explains exact action
+
+7. Post-Test Survey
+Ask:
+	•	How did you feel using the product?
+	•	What did you like the most in terms of visuals and functionality?
+	•	Did you feel confused or stuck somewhere while doing tasks?
+	•	Would you use this regularly?
+	•	Is there anything you want to improve if you were the designer?
+
