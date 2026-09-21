@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { Volume2, VolumeX, Sparkles, Music2, Keyboard, HelpCircle, RotateCcw } from "lucide-react";
+import { Volume2, VolumeX, Sparkles, Music2, Keyboard, HelpCircle } from "lucide-react";
 
 interface WhiteKeyConfig {
   note: string;
@@ -32,6 +32,20 @@ interface DrumPadConfig {
   row: number; // 0 = top, 1 = bottom
   col: number; // 0..3
   color: string;
+}
+
+interface BubbleInstance {
+  id: number;
+  timestamp: number;
+  x: number; // %
+  y: number; // %
+  size: number; // px
+  sprite: string;
+  hue: number; // deg
+  driftX: number; // px
+  driftY: number; // px
+  scale: number;
+  duration: number; // seconds
 }
 
 const WHITE_KEYS: WhiteKeyConfig[] = [
@@ -84,6 +98,29 @@ const NOTE_FREQUENCIES: Record<string, number> = {
   C5: 523.25
 };
 
+// Vibrant chromatic hue mapping for each musical note
+const NOTE_HUES: Record<string, number> = {
+  C: 320,   // Neon Pink / Magenta
+  Db: 350,  // Crimson Red
+  D: 25,    // Fiery Orange
+  Eb: 50,   // Amber / Gold
+  E: 90,    // Lime Green
+  F: 145,   // Emerald Mint
+  Gb: 175,  // Cyan / Aqua
+  G: 205,   // Sky Blue
+  Ab: 235,  // Deep Royal Blue
+  A: 265,   // Indigo / Violet
+  Bb: 285,  // Purple / Lavender
+  B: 305,   // Fuchsia
+};
+
+const BUBBLE_SPRITES = [
+  "/bubbles/bubble-1.png",
+  "/bubbles/bubble-2.png",
+  "/bubbles/bubble-3.png",
+  "/bubbles/bubble-4.png",
+];
+
 export default function InteractivePiano() {
   const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
   const [activePads, setActivePads] = useState<Set<number>>(new Set());
@@ -91,14 +128,14 @@ export default function InteractivePiano() {
   const [showKeyLabels, setShowKeyLabels] = useState(true);
   const [volume, setVolume] = useState(0.85);
   const [isMuted, setIsMuted] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [pitchBend, setPitchBend] = useState(0); // -1 to +1
+  const [bubbles, setBubbles] = useState<BubbleInstance[]>([]);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const bufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map());
-  const activeSourcesRef = useRef<Map<string, AudioNode>>(new Map());
   const isDraggingJoystickRef = useRef(false);
+  const bubbleCounterRef = useRef(0);
 
   // Initialize Web Audio
   const getAudioContext = useCallback(() => {
@@ -131,7 +168,6 @@ export default function InteractivePiano() {
         "C4", "Db4", "D4", "Eb4", "E4", "F4", "Gb4", "G4", "Ab4", "A4", "Bb4", "B4", "C5"
       ];
 
-      // Preload critical middle notes first for immediate playability
       const priorityNotes = ["C3", "E3", "G3", "C4", "E4", "G4", "A4"];
       const remainingNotes = allNotes.filter((n) => !priorityNotes.includes(n));
 
@@ -145,15 +181,11 @@ export default function InteractivePiano() {
             bufferCacheRef.current.set(note, audioBuffer);
           }
         } catch {
-          // Will fall back to synthesized soft tone
+          // Fall back to synthesized soft tone
         }
       };
 
-      // Load priority notes first
       await Promise.all(priorityNotes.map(loadNote));
-      if (!isCancelled) setIsLoaded(true);
-
-      // Load remaining notes in background
       Promise.all(remainingNotes.map(loadNote));
     };
 
@@ -171,41 +203,83 @@ export default function InteractivePiano() {
     }
   }, [volume, isMuted]);
 
-  // Synthesize rich soft acoustic piano tone (fallback / instant resonance)
+  // Auto-cleanup bubbles after animation completes
+  useEffect(() => {
+    if (bubbles.length === 0) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setBubbles((prev) => prev.filter((b) => now - b.timestamp < 2200));
+    }, 800);
+    return () => clearInterval(interval);
+  }, [bubbles.length]);
+
+  // Spawn colourful iridescent bubbles constrained inside this frame
+  const spawnBubbles = useCallback((xPct: number, yPct: number, noteOrName: string) => {
+    const count = 2 + Math.floor(Math.random() * 2); // 2-3 bubbles
+    const noteRoot = noteOrName.replace(/[0-9]/g, "").trim();
+    const baseHue = NOTE_HUES[noteRoot] ?? Math.floor(Math.random() * 360);
+
+    const newItems: BubbleInstance[] = [];
+    const now = Date.now();
+
+    for (let i = 0; i < count; i++) {
+      bubbleCounterRef.current += 1;
+      const sprite = BUBBLE_SPRITES[Math.floor(Math.random() * BUBBLE_SPRITES.length)];
+      // Randomize size between 34px and 76px
+      const size = 36 + Math.floor(Math.random() * 40);
+      const hueOffset = (Math.random() - 0.5) * 40;
+      const driftX = (Math.random() - 0.5) * 44; // horizontal sway in px
+      const driftY = -(65 + Math.random() * 95);  // float up 65px to 160px
+      const duration = 1.2 + Math.random() * 0.5;
+
+      newItems.push({
+        id: bubbleCounterRef.current,
+        timestamp: now,
+        x: Math.max(3, Math.min(97, xPct + (Math.random() - 0.5) * 2.8)),
+        y: Math.max(5, Math.min(95, yPct + (Math.random() - 0.5) * 3)),
+        size,
+        sprite,
+        hue: (baseHue + hueOffset + 360) % 360,
+        driftX,
+        driftY,
+        scale: 0.85 + Math.random() * 0.4,
+        duration,
+      });
+    }
+
+    setBubbles((prev) => [...prev.slice(-32), ...newItems]);
+  }, []);
+
+  // Synthesize rich soft acoustic piano tone fallback
   const synthesizeSoftPiano = useCallback((ctx: AudioContext, note: string, detuneCents = 0) => {
     const baseFreq = NOTE_FREQUENCIES[note] || 261.63;
     const now = ctx.currentTime;
 
-    // Filter to simulate felt hammer striking steel strings
     const filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.setValueAtTime(2800, now);
     filter.frequency.exponentialRampToValueAtTime(320, now + 1.2);
     filter.Q.setValueAtTime(1.8, now);
 
-    // Dynamic Gain Envelope
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.7, now + 0.008); // Gentle attack
-    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.35); // Initial decay
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.4); // Natural long sustain decay
+    gain.gain.linearRampToValueAtTime(0.7, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.35);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
 
-    // Layer 1: Fundamental Sine
     const osc1 = ctx.createOscillator();
     osc1.type = "sine";
     osc1.frequency.setValueAtTime(baseFreq, now);
     osc1.detune.setValueAtTime(detuneCents, now);
 
-    // Layer 2: Warm 2nd Harmonic
     const osc2 = ctx.createOscillator();
     osc2.type = "triangle";
     osc2.frequency.setValueAtTime(baseFreq * 2, now);
-    osc2.detune.setValueAtTime(detuneCents + 2.5, now); // Gentle chorus detune
+    osc2.detune.setValueAtTime(detuneCents + 2.5, now);
 
     const osc2Gain = ctx.createGain();
     osc2Gain.gain.setValueAtTime(0.22, now);
 
-    // Layer 3: Subtle Sub-harmonic warmth
     const osc3 = ctx.createOscillator();
     osc3.type = "sine";
     osc3.frequency.setValueAtTime(baseFreq, now);
@@ -214,7 +288,6 @@ export default function InteractivePiano() {
     const osc3Gain = ctx.createGain();
     osc3Gain.gain.setValueAtTime(0.4, now);
 
-    // Routing
     osc1.connect(filter);
     osc2.connect(osc2Gain).connect(filter);
     osc3.connect(osc3Gain).connect(filter);
@@ -242,15 +315,24 @@ export default function InteractivePiano() {
     const ctx = getAudioContext();
     if (!ctx) return;
 
-    // Visual feedback
     setActiveNotes((prev) => new Set(prev).add(note));
     setLastPlayed(`🎹 ${note}`);
+
+    // Spawn colorful iridescent bubbles at key position
+    const white = WHITE_KEYS.find((k) => k.note === note);
+    if (white) {
+      spawnBubbles(white.left + white.width / 2, 60, note);
+    } else {
+      const black = BLACK_KEYS.find((k) => k.note === note);
+      if (black) {
+        spawnBubbles(black.left + black.width / 2, 48, note);
+      }
+    }
 
     const buffer = bufferCacheRef.current.get(note);
     const detuneCents = pitchBend * 300;
 
     if (buffer) {
-      // High fidelity sampled acoustic piano
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.detune.setValueAtTime(detuneCents, ctx.currentTime);
@@ -270,9 +352,7 @@ export default function InteractivePiano() {
       }
 
       source.start(0);
-      activeSourcesRef.current.set(note, gain);
 
-      // Auto clean-up visual state after short trigger if not held
       setTimeout(() => {
         setActiveNotes((prev) => {
           const next = new Set(prev);
@@ -281,7 +361,6 @@ export default function InteractivePiano() {
         });
       }, 300);
     } else {
-      // High-quality acoustic felt synthesizer fallback
       synthesizeSoftPiano(ctx, note, detuneCents);
       setTimeout(() => {
         setActiveNotes((prev) => {
@@ -291,7 +370,7 @@ export default function InteractivePiano() {
         });
       }, 300);
     }
-  }, [getAudioContext, pitchBend, synthesizeSoftPiano]);
+  }, [getAudioContext, pitchBend, synthesizeSoftPiano, spawnBubbles]);
 
   // Synthesize Drum Pad Sounds
   const playDrumPad = useCallback((padId: number) => {
@@ -301,6 +380,11 @@ export default function InteractivePiano() {
     setActivePads((prev) => new Set(prev).add(padId));
     const pad = DRUM_PADS[padId];
     setLastPlayed(`🥁 ${pad.name}`);
+
+    // Spawn bubbles above drum pad
+    const padTop = pad.row === 0 ? 22 : 34;
+    const padLefts = [31.35, 42.65, 53.95, 65.25];
+    spawnBubbles(padLefts[pad.col], padTop, pad.name);
 
     const now = ctx.currentTime;
     const dest = masterGainRef.current || ctx.destination;
@@ -330,7 +414,6 @@ export default function InteractivePiano() {
         toneOsc.start(now);
         toneOsc.stop(now + 0.15);
 
-        // Noise snap
         const bufferSize = ctx.sampleRate * 0.2;
         const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -416,7 +499,6 @@ export default function InteractivePiano() {
         filter.frequency.setValueAtTime(1200, now);
         filter.Q.setValueAtTime(1.5, now);
         const gain = ctx.createGain();
-        // 3 mini bursts
         gain.gain.setValueAtTime(0.7, now);
         gain.gain.setValueAtTime(0.1, now + 0.015);
         gain.gain.setValueAtTime(0.8, now + 0.03);
@@ -442,7 +524,7 @@ export default function InteractivePiano() {
         break;
       }
       case 7: {
-        // Perc Tap / Wood Block
+        // Perc Tap
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.frequency.setValueAtTime(820, now);
@@ -462,12 +544,11 @@ export default function InteractivePiano() {
         return next;
       });
     }, 200);
-  }, [getAudioContext]);
+  }, [getAudioContext, spawnBubbles]);
 
   // Physical Keyboard Listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Avoid hijacking input when user is typing in forms
       const activeEl = document.activeElement;
       if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
         return;
@@ -554,7 +635,7 @@ export default function InteractivePiano() {
               transition={{ delay: 0.1 }}
               className="text-sm sm:text-base text-stone-400 mt-2 max-w-xl"
             >
-              Click or tap the keys, hit the drum pads, or use your computer keyboard to play soft concert grand piano chords and lo-fi beats.
+              Click or tap the keys, hit the drum pads, or use your computer keyboard to play soft concert grand piano chords and watch colorful bubbles dance!
             </motion.p>
           </div>
 
@@ -621,11 +702,11 @@ export default function InteractivePiano() {
           </div>
         </div>
 
-        {/* Keyboard Chassis & Interactive Canvas */}
-        <div className="relative w-full rounded-2xl md:rounded-3xl p-2 sm:p-4 bg-stone-950/80 border border-stone-800/80 shadow-2xl backdrop-blur-sm overflow-hidden">
-          {/* Main aspect container matching 1024 x 649 */}
-          <div className="relative w-full aspect-[1024/649] rounded-xl md:rounded-2xl overflow-hidden shadow-inner">
-            {/* The authentic Akai MPK Mini illustration */}
+        {/* Keyboard Chassis Frame - Completely Black Background with No White Borders */}
+        <div className="relative w-full rounded-2xl md:rounded-3xl p-2 sm:p-4 bg-black border border-stone-800 shadow-2xl overflow-hidden">
+          {/* Main aspect container matching 1024 x 649 (constrained frame for bubbles & keys) */}
+          <div className="relative w-full aspect-[1024/649] rounded-xl md:rounded-2xl overflow-hidden bg-black shadow-inner">
+            {/* The transparent Akai MPK Mini illustration on pure black background */}
             <Image
               src="/midi-keyboard.png"
               alt="Playable Akai MPK Mini MIDI Keyboard"
@@ -635,12 +716,54 @@ export default function InteractivePiano() {
               sizes="(max-width: 1200px) 100vw, 1100px"
             />
 
-            {/* Interactive Hitbox & Animation Layer */}
-            <div className="absolute inset-0">
+            {/* ---------------- FLOATING COLORFUL BUBBLES CONSTRAINED UNDER THIS FRAME ONLY ---------------- */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-30">
+              <AnimatePresence>
+                {bubbles.map((b) => (
+                  <motion.div
+                    key={b.id}
+                    initial={{
+                      opacity: 0,
+                      scale: 0.25,
+                      x: 0,
+                      y: 0,
+                    }}
+                    animate={{
+                      opacity: [0, 0.95, 0.9, 0],
+                      scale: [0.25, b.scale, b.scale * 1.08, b.scale * 1.25],
+                      x: [0, b.driftX * 0.5, b.driftX],
+                      y: [0, b.driftY * 0.5, b.driftY],
+                    }}
+                    exit={{ opacity: 0, scale: 1.35 }}
+                    transition={{ duration: b.duration, ease: "easeOut" }}
+                    style={{
+                      position: "absolute",
+                      left: `${b.x}%`,
+                      top: `${b.y}%`,
+                      width: `${b.size}px`,
+                      height: `${b.size}px`,
+                      transform: "translate(-50%, -50%)",
+                      filter: `hue-rotate(${b.hue}deg) drop-shadow(0 0 10px rgba(168, 85, 247, 0.45))`,
+                    }}
+                  >
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={b.sprite}
+                        alt="Bubble"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {/* Interactive Hitbox & Key Animation Layer */}
+            <div className="absolute inset-0 z-10">
               {/* ---------------- 8 MPC DRUM PADS ---------------- */}
               {DRUM_PADS.map((pad) => {
                 const isPadActive = activePads.has(pad.id);
-                // Grid layout aligned with image pads
                 const topPct = pad.row === 0 ? 20.34 : 32.67;
                 const heightPct = pad.row === 0 ? 7.55 : 8.17;
                 const leftOffsets = [26.9, 38.2, 49.5, 60.8];
@@ -674,7 +797,6 @@ export default function InteractivePiano() {
                           : "hover:bg-red-500/15 group-active:scale-[0.97]"
                       }`}
                     >
-                      {/* Shortcut label badge on pad */}
                       {showKeyLabels && (
                         <span className="absolute bottom-1 right-1.5 text-[9px] sm:text-[11px] font-mono font-bold px-1 rounded bg-black/60 text-stone-200 border border-stone-700/60 pointer-events-none">
                           {pad.shortcut}
@@ -699,6 +821,7 @@ export default function InteractivePiano() {
                   isDraggingJoystickRef.current = true;
                   setPitchBend(0.5);
                   setLastPlayed("🕹️ Pitch Bend +");
+                  spawnBubbles(16.5, 20, "F");
                 }}
                 onPointerUp={() => {
                   isDraggingJoystickRef.current = false;
@@ -747,7 +870,6 @@ export default function InteractivePiano() {
                           : "hover:bg-white/10 group-active:translate-y-0.5"
                       }`}
                     >
-                      {/* Keyboard shortcut label on key */}
                       {showKeyLabels && (
                         <span className="text-[9px] sm:text-[11px] font-mono font-semibold px-1 py-0.5 rounded bg-stone-900/75 text-stone-300 border border-stone-700/60 pointer-events-none mb-1">
                           {key.keyA}
@@ -807,7 +929,7 @@ export default function InteractivePiano() {
           <div className="flex items-center gap-2 text-stone-400">
             <HelpCircle className="w-4 h-4 text-stone-500 flex-shrink-0" />
             <span>
-              Pro tip: Play smoothly with computer keys <strong className="text-stone-200">A-S-D-F-G-H-J</strong> for white notes and <strong className="text-stone-200">W-E-T-Y-U</strong> for sharps.
+              Pro tip: Play keys with <strong className="text-stone-200">A-S-D-F-G-H-J</strong> for white notes and <strong className="text-stone-200">W-E-T-Y-U</strong> for sharps to launch colorful bubbles!
             </span>
           </div>
           <div className="flex items-center gap-3">
