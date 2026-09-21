@@ -385,12 +385,9 @@ export default function SoulCareCaseStudy() {
           {/* ── Current Designs / Features ────────────────── */}
           <Section className="mb-20">
             <div className="mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
                 Current Designs
               </h2>
-              <div className="inline-block bg-[#2563EB] text-white text-sm font-bold px-6 py-2.5 rounded-xl">
-                Features
-              </div>
             </div>
 
             {/* Feature 1: Voice reminders */}
