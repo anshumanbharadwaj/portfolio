@@ -11,8 +11,12 @@ interface WhiteKeyConfig {
   name: string;
   keyA: string; // Layout A (A S D F...)
   keyB: string; // Layout B (Z X C V...)
-  left: number;  // %
-  width: number; // %
+  left: number;  // % in whole image
+  width: number; // % in whole image
+  // Relative position inside keyboard frame (8.50% to 91.21% = 82.71% width)
+  relLeft: number;
+  relWidth: number;
+  relCenter: number;
 }
 
 interface BlackKeyConfig {
@@ -21,8 +25,11 @@ interface BlackKeyConfig {
   name: string;
   keyA: string;
   keyB: string;
-  left: number;  // %
-  width: number; // %
+  left: number;  // % in whole image
+  width: number; // % in whole image
+  relLeft: number;
+  relWidth: number;
+  relCenter: number;
 }
 
 interface DrumPadConfig {
@@ -37,45 +44,59 @@ interface DrumPadConfig {
 interface BubbleInstance {
   id: number;
   timestamp: number;
-  x: number; // %
-  y: number; // %
+  relX: number; // % inside keyboard frame
+  startY: number; // % inside keyboard frame (e.g. 75% for white, 50% for black)
   size: number; // px
   sprite: string;
   hue: number; // deg
-  driftX: number; // px
-  driftY: number; // px
-  scale: number;
   duration: number; // seconds
 }
 
+interface PianoLaneBeam {
+  id: number;
+  relLeft: number;
+  relWidth: number;
+  color: string;
+}
+
+// Relative conversion helper
+const KB_LEFT = 8.50;
+const KB_WIDTH = 82.71;
+const toRel = (l: number, w: number) => {
+  const relLeft = ((l - KB_LEFT) / KB_WIDTH) * 100;
+  const relWidth = (w / KB_WIDTH) * 100;
+  const relCenter = relLeft + relWidth / 2;
+  return { relLeft, relWidth, relCenter };
+};
+
 const WHITE_KEYS: WhiteKeyConfig[] = [
-  { note: "C3", label: "C3", name: "C", keyA: "A", keyB: "Z", left: 8.50, width: 6.01 },
-  { note: "D3", label: "D3", name: "D", keyA: "S", keyB: "X", left: 14.50, width: 5.76 },
-  { note: "E3", label: "E3", name: "E", keyA: "D", keyB: "C", left: 20.26, width: 5.71 },
-  { note: "F3", label: "F3", name: "F", keyA: "F", keyB: "V", left: 25.98, width: 5.71 },
-  { note: "G3", label: "G3", name: "G", keyA: "G", keyB: "B", left: 31.69, width: 5.76 },
-  { note: "A3", label: "A3", name: "A", keyA: "H", keyB: "N", left: 37.45, width: 5.76 },
-  { note: "B3", label: "B3", name: "B", keyA: "J", keyB: "M", left: 43.21, width: 5.81 },
-  { note: "C4", label: "C4", name: "C (Mid)", keyA: "K", keyB: "Q", left: 49.02, width: 5.81 },
-  { note: "D4", label: "D4", name: "D", keyA: "L", keyB: "W", left: 54.83, width: 5.76 },
-  { note: "E4", label: "E4", name: "E", keyA: ";", keyB: "E", left: 60.60, width: 5.76 },
-  { note: "F4", label: "F4", name: "F", keyA: "'", keyB: "R", left: 66.36, width: 5.76 },
-  { note: "G4", label: "G4", name: "G", keyA: "]", keyB: "T", left: 72.12, width: 5.76 },
-  { note: "A4", label: "A4", name: "A", keyA: "\\", keyB: "Y", left: 77.88, width: 5.76 },
-  { note: "B4", label: "B4", name: "B", keyA: "Enter", keyB: "U", left: 83.64, width: 7.57 },
+  { note: "C3", label: "C3", name: "C", keyA: "A", keyB: "Z", left: 8.50, width: 6.01, ...toRel(8.50, 6.01) },
+  { note: "D3", label: "D3", name: "D", keyA: "S", keyB: "X", left: 14.50, width: 5.76, ...toRel(14.50, 5.76) },
+  { note: "E3", label: "E3", name: "E", keyA: "D", keyB: "C", left: 20.26, width: 5.71, ...toRel(20.26, 5.71) },
+  { note: "F3", label: "F3", name: "F", keyA: "F", keyB: "V", left: 25.98, width: 5.71, ...toRel(25.98, 5.71) },
+  { note: "G3", label: "G3", name: "G", keyA: "G", keyB: "B", left: 31.69, width: 5.76, ...toRel(31.69, 5.76) },
+  { note: "A3", label: "A3", name: "A", keyA: "H", keyB: "N", left: 37.45, width: 5.76, ...toRel(37.45, 5.76) },
+  { note: "B3", label: "B3", name: "B", keyA: "J", keyB: "M", left: 43.21, width: 5.81, ...toRel(43.21, 5.81) },
+  { note: "C4", label: "C4", name: "C (Mid)", keyA: "K", keyB: "Q", left: 49.02, width: 5.81, ...toRel(49.02, 5.81) },
+  { note: "D4", label: "D4", name: "D", keyA: "L", keyB: "W", left: 54.83, width: 5.76, ...toRel(54.83, 5.76) },
+  { note: "E4", label: "E4", name: "E", keyA: ";", keyB: "E", left: 60.60, width: 5.76, ...toRel(60.60, 5.76) },
+  { note: "F4", label: "F4", name: "F", keyA: "'", keyB: "R", left: 66.36, width: 5.76, ...toRel(66.36, 5.76) },
+  { note: "G4", label: "G4", name: "G", keyA: "]", keyB: "T", left: 72.12, width: 5.76, ...toRel(72.12, 5.76) },
+  { note: "A4", label: "A4", name: "A", keyA: "\\", keyB: "Y", left: 77.88, width: 5.76, ...toRel(77.88, 5.76) },
+  { note: "B4", label: "B4", name: "B", keyA: "Enter", keyB: "U", left: 83.64, width: 7.57, ...toRel(83.64, 7.57) },
 ];
 
 const BLACK_KEYS: BlackKeyConfig[] = [
-  { note: "Db3", label: "C#3", name: "C#", keyA: "W", keyB: "S", left: 13.48, width: 2.15 },
-  { note: "Eb3", label: "D#3", name: "D#", keyA: "E", keyB: "D", left: 20.12, width: 2.15 },
-  { note: "Gb3", label: "F#3", name: "F#", keyA: "T", keyB: "G", left: 30.08, width: 2.15 },
-  { note: "Ab3", label: "G#3", name: "G#", keyA: "Y", keyB: "H", left: 36.52, width: 2.15 },
-  { note: "Bb3", label: "A#3", name: "A#", keyA: "U", keyB: "J", left: 42.87, width: 2.15 },
-  { note: "Db4", label: "C#4", name: "C#", keyA: "O", keyB: "2", left: 53.22, width: 2.15 },
-  { note: "Eb4", label: "D#4", name: "D#", keyA: "P", keyB: "3", left: 60.06, width: 2.15 },
-  { note: "Gb4", label: "F#4", name: "F#", keyA: "[", keyB: "5", left: 70.21, width: 2.15 },
-  { note: "Ab4", label: "G#4", name: "G#", keyA: "=", keyB: "6", left: 76.76, width: 2.15 },
-  { note: "Bb4", label: "A#4", name: "A#", keyA: "Backspace", keyB: "7", left: 83.79, width: 2.15 },
+  { note: "Db3", label: "C#3", name: "C#", keyA: "W", keyB: "S", left: 13.48, width: 2.15, ...toRel(13.48, 2.15) },
+  { note: "Eb3", label: "D#3", name: "D#", keyA: "E", keyB: "D", left: 20.12, width: 2.15, ...toRel(20.12, 2.15) },
+  { note: "Gb3", label: "F#3", name: "F#", keyA: "T", keyB: "G", left: 30.08, width: 2.15, ...toRel(30.08, 2.15) },
+  { note: "Ab3", label: "G#3", name: "G#", keyA: "Y", keyB: "H", left: 36.52, width: 2.15, ...toRel(36.52, 2.15) },
+  { note: "Bb3", label: "A#3", name: "A#", keyA: "U", keyB: "J", left: 42.87, width: 2.15, ...toRel(42.87, 2.15) },
+  { note: "Db4", label: "C#4", name: "C#", keyA: "O", keyB: "2", left: 53.22, width: 2.15, ...toRel(53.22, 2.15) },
+  { note: "Eb4", label: "D#4", name: "D#", keyA: "P", keyB: "3", left: 60.06, width: 2.15, ...toRel(60.06, 2.15) },
+  { note: "Gb4", label: "F#4", name: "F#", keyA: "[", keyB: "5", left: 70.21, width: 2.15, ...toRel(70.21, 2.15) },
+  { note: "Ab4", label: "G#4", name: "G#", keyA: "=", keyB: "6", left: 76.76, width: 2.15, ...toRel(76.76, 2.15) },
+  { note: "Bb4", label: "A#4", name: "A#", keyA: "Backspace", keyB: "7", left: 83.79, width: 2.15, ...toRel(83.79, 2.15) },
 ];
 
 const DRUM_PADS: DrumPadConfig[] = [
@@ -114,6 +135,21 @@ const NOTE_HUES: Record<string, number> = {
   B: 305,   // Fuchsia
 };
 
+const NOTE_COLORS: Record<string, string> = {
+  C: "#f43f5e",   // Rose
+  Db: "#ef4444",  // Red
+  D: "#f97316",   // Orange
+  Eb: "#f59e0b",  // Amber
+  E: "#84cc16",   // Lime
+  F: "#10b981",   // Emerald
+  Gb: "#06b6d4",  // Cyan
+  G: "#3b82f6",   // Blue
+  Ab: "#6366f1",  // Indigo
+  A: "#8b5cf6",   // Violet
+  Bb: "#a855f7",  // Purple
+  B: "#ec4899",   // Pink
+};
+
 const BUBBLE_SPRITES = [
   "/bubbles/bubble-1.png",
   "/bubbles/bubble-2.png",
@@ -130,12 +166,14 @@ export default function InteractivePiano() {
   const [isMuted, setIsMuted] = useState(false);
   const [pitchBend, setPitchBend] = useState(0); // -1 to +1
   const [bubbles, setBubbles] = useState<BubbleInstance[]>([]);
+  const [laneBeams, setLaneBeams] = useState<PianoLaneBeam[]>([]);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const bufferCacheRef = useRef<Map<string, AudioBuffer>>(new Map());
   const isDraggingJoystickRef = useRef(false);
   const bubbleCounterRef = useRef(0);
+  const laneCounterRef = useRef(0);
 
   // Initialize Web Audio
   const getAudioContext = useCallback(() => {
@@ -208,46 +246,53 @@ export default function InteractivePiano() {
     if (bubbles.length === 0) return;
     const interval = setInterval(() => {
       const now = Date.now();
-      setBubbles((prev) => prev.filter((b) => now - b.timestamp < 2200));
-    }, 800);
+      setBubbles((prev) => prev.filter((b) => now - b.timestamp < 1600));
+    }, 600);
     return () => clearInterval(interval);
   }, [bubbles.length]);
 
-  // Spawn colourful iridescent bubbles constrained inside this frame
-  const spawnBubbles = useCallback((xPct: number, yPct: number, noteOrName: string) => {
-    const count = 2 + Math.floor(Math.random() * 2); // 2-3 bubbles
-    const noteRoot = noteOrName.replace(/[0-9]/g, "").trim();
-    const baseHue = NOTE_HUES[noteRoot] ?? Math.floor(Math.random() * 360);
+  // Spawn Piano Tiles style bubbles: strictly rising in upper direction of key, inside keyboard frame only
+  const spawnPianoTilesBubbles = useCallback((relCenter: number, relLeft: number, relWidth: number, isWhiteKey: boolean, note: string) => {
+    const noteRoot = note.replace(/[0-9]/g, "").trim();
+    const baseHue = NOTE_HUES[noteRoot] ?? 320;
+    const color = NOTE_COLORS[noteRoot] ?? "#ec4899";
+
+    // 1. Add glowing Piano Tiles vertical lane beam
+    laneCounterRef.current += 1;
+    const laneId = laneCounterRef.current;
+    setLaneBeams((prev) => [...prev.slice(-12), { id: laneId, relLeft, relWidth, color }]);
+    setTimeout(() => {
+      setLaneBeams((prev) => prev.filter((l) => l.id !== laneId));
+    }, 550);
+
+    // 2. Spawn 2 to 3 bubbles shooting straight UP in the key lane
+    const count = 2 + Math.floor(Math.random() * 2);
+    const now = Date.now();
+    const startY = isWhiteKey ? 78 : 55; // White keys launch from bottom; black keys from lower half
 
     const newItems: BubbleInstance[] = [];
-    const now = Date.now();
-
     for (let i = 0; i < count; i++) {
       bubbleCounterRef.current += 1;
       const sprite = BUBBLE_SPRITES[Math.floor(Math.random() * BUBBLE_SPRITES.length)];
-      // Randomize size between 34px and 76px
-      const size = 36 + Math.floor(Math.random() * 40);
-      const hueOffset = (Math.random() - 0.5) * 40;
-      const driftX = (Math.random() - 0.5) * 44; // horizontal sway in px
-      const driftY = -(65 + Math.random() * 95);  // float up 65px to 160px
-      const duration = 1.2 + Math.random() * 0.5;
+      // Size fits gracefully inside key width
+      const size = 28 + Math.floor(Math.random() * 22);
+      const hueOffset = (Math.random() - 0.5) * 30;
+      const duration = 0.95 + Math.random() * 0.35;
 
       newItems.push({
         id: bubbleCounterRef.current,
         timestamp: now,
-        x: Math.max(3, Math.min(97, xPct + (Math.random() - 0.5) * 2.8)),
-        y: Math.max(5, Math.min(95, yPct + (Math.random() - 0.5) * 3)),
+        // Aligned strictly in key column (like piano tiles, no sideways drift into other keys)
+        relX: relCenter + (Math.random() - 0.5) * 0.8,
+        startY: startY + (Math.random() - 0.5) * 6,
         size,
         sprite,
         hue: (baseHue + hueOffset + 360) % 360,
-        driftX,
-        driftY,
-        scale: 0.85 + Math.random() * 0.4,
         duration,
       });
     }
 
-    setBubbles((prev) => [...prev.slice(-32), ...newItems]);
+    setBubbles((prev) => [...prev.slice(-24), ...newItems]);
   }, []);
 
   // Synthesize rich soft acoustic piano tone fallback
@@ -318,14 +363,14 @@ export default function InteractivePiano() {
     setActiveNotes((prev) => new Set(prev).add(note));
     setLastPlayed(`🎹 ${note}`);
 
-    // Spawn colorful iridescent bubbles at key position
+    // Spawn bubbles in upper direction of this key, like Piano Tiles (confined inside keyboard frame)
     const white = WHITE_KEYS.find((k) => k.note === note);
     if (white) {
-      spawnBubbles(white.left + white.width / 2, 60, note);
+      spawnPianoTilesBubbles(white.relCenter, white.relLeft, white.relWidth, true, note);
     } else {
       const black = BLACK_KEYS.find((k) => k.note === note);
       if (black) {
-        spawnBubbles(black.left + black.width / 2, 48, note);
+        spawnPianoTilesBubbles(black.relCenter, black.relLeft, black.relWidth, false, note);
       }
     }
 
@@ -370,9 +415,9 @@ export default function InteractivePiano() {
         });
       }, 300);
     }
-  }, [getAudioContext, pitchBend, synthesizeSoftPiano, spawnBubbles]);
+  }, [getAudioContext, pitchBend, synthesizeSoftPiano, spawnPianoTilesBubbles]);
 
-  // Synthesize Drum Pad Sounds
+  // Synthesize Drum Pad Sounds (Pads do NOT spawn bubbles, keeping instrument top clean)
   const playDrumPad = useCallback((padId: number) => {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -380,11 +425,6 @@ export default function InteractivePiano() {
     setActivePads((prev) => new Set(prev).add(padId));
     const pad = DRUM_PADS[padId];
     setLastPlayed(`🥁 ${pad.name}`);
-
-    // Spawn bubbles above drum pad
-    const padTop = pad.row === 0 ? 22 : 34;
-    const padLefts = [31.35, 42.65, 53.95, 65.25];
-    spawnBubbles(padLefts[pad.col], padTop, pad.name);
 
     const now = ctx.currentTime;
     const dest = masterGainRef.current || ctx.destination;
@@ -544,7 +584,7 @@ export default function InteractivePiano() {
         return next;
       });
     }, 200);
-  }, [getAudioContext, spawnBubbles]);
+  }, [getAudioContext]);
 
   // Physical Keyboard Listener
   useEffect(() => {
@@ -635,7 +675,7 @@ export default function InteractivePiano() {
               transition={{ delay: 0.1 }}
               className="text-sm sm:text-base text-stone-400 mt-2 max-w-xl"
             >
-              Click or tap the keys, hit the drum pads, or use your computer keyboard to play soft concert grand piano chords and watch colorful bubbles dance!
+              Click or tap the keys, hit the drum pads, or use your computer keyboard. Watch colorful bubbles shoot upward through the keys like Piano Tiles!
             </motion.p>
           </div>
 
@@ -702,9 +742,9 @@ export default function InteractivePiano() {
           </div>
         </div>
 
-        {/* Keyboard Chassis Frame - Completely Black Background with No White Borders */}
+        {/* Keyboard Chassis Frame - Pure Black Background */}
         <div className="relative w-full rounded-2xl md:rounded-3xl p-2 sm:p-4 bg-black border border-stone-800 shadow-2xl overflow-hidden">
-          {/* Main aspect container matching 1024 x 649 (constrained frame for bubbles & keys) */}
+          {/* Main aspect container matching 1024 x 649 */}
           <div className="relative w-full aspect-[1024/649] rounded-xl md:rounded-2xl overflow-hidden bg-black shadow-inner">
             {/* The transparent Akai MPK Mini illustration on pure black background */}
             <Image
@@ -716,8 +756,41 @@ export default function InteractivePiano() {
               sizes="(max-width: 1200px) 100vw, 1100px"
             />
 
-            {/* ---------------- FLOATING COLORFUL BUBBLES CONSTRAINED UNDER THIS FRAME ONLY ---------------- */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden z-30">
+            {/* ---------------- KEYBOARD-ONLY PIANO TILES BUBBLE FRAME ----------------
+                Strictly constrained inside the keyboard keys area (left: 8.5%, width: 82.71%, top: 48.23%, height: 30.51%).
+                Bubbles and beams shoot in the UPPER DIRECTION of the keyboard like Piano Tiles,
+                and are clipped at the top so they NEVER appear above the instrument body (pads/knobs). */}
+            <div
+              className="absolute pointer-events-none overflow-hidden z-30"
+              style={{
+                left: `${KB_LEFT}%`,
+                width: `${KB_WIDTH}%`,
+                top: "48.23%",
+                height: "30.51%",
+              }}
+            >
+              {/* Piano Tiles Vertical Lane Beams */}
+              {laneBeams.map((lane) => (
+                <motion.div
+                  key={`beam-${lane.id}`}
+                  initial={{ opacity: 0, scaleY: 0 }}
+                  animate={{ opacity: [0, 0.75, 0.5, 0], scaleY: [0, 1, 1, 1] }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  style={{
+                    position: "absolute",
+                    left: `${lane.relLeft}%`,
+                    width: `${lane.relWidth}%`,
+                    bottom: 0,
+                    top: 0,
+                    transformOrigin: "bottom center",
+                    background: `linear-gradient(to top, ${lane.color}77 0%, ${lane.color}33 50%, transparent 100%)`,
+                    boxShadow: `0 0 14px ${lane.color}55`,
+                    pointerEvents: "none",
+                  }}
+                />
+              ))}
+
+              {/* Piano Tiles Bubbles Shooting Upwards along the key lane */}
               <AnimatePresence>
                 {bubbles.map((b) => (
                   <motion.div
@@ -725,25 +798,24 @@ export default function InteractivePiano() {
                     initial={{
                       opacity: 0,
                       scale: 0.25,
-                      x: 0,
                       y: 0,
                     }}
                     animate={{
-                      opacity: [0, 0.95, 0.9, 0],
-                      scale: [0.25, b.scale, b.scale * 1.08, b.scale * 1.25],
-                      x: [0, b.driftX * 0.5, b.driftX],
-                      y: [0, b.driftY * 0.5, b.driftY],
+                      opacity: [0, 1, 0.9, 0],
+                      scale: [0.25, 1.0, 1.1, 1.25],
+                      // Shoot straight UP in the upper direction of the keyboard like Piano Tiles
+                      y: [0, -45, -95, -140],
                     }}
-                    exit={{ opacity: 0, scale: 1.35 }}
+                    exit={{ opacity: 0, scale: 1.3 }}
                     transition={{ duration: b.duration, ease: "easeOut" }}
                     style={{
                       position: "absolute",
-                      left: `${b.x}%`,
-                      top: `${b.y}%`,
+                      left: `${b.relX}%`,
+                      top: `${b.startY}%`,
                       width: `${b.size}px`,
                       height: `${b.size}px`,
                       transform: "translate(-50%, -50%)",
-                      filter: `hue-rotate(${b.hue}deg) drop-shadow(0 0 10px rgba(168, 85, 247, 0.45))`,
+                      filter: `hue-rotate(${b.hue}deg) drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))`,
                     }}
                   >
                     <div className="relative w-full h-full">
@@ -761,7 +833,7 @@ export default function InteractivePiano() {
 
             {/* Interactive Hitbox & Key Animation Layer */}
             <div className="absolute inset-0 z-10">
-              {/* ---------------- 8 MPC DRUM PADS ---------------- */}
+              {/* ---------------- 8 MPC DRUM PADS (Clean hardware triggers, no bubbles) ---------------- */}
               {DRUM_PADS.map((pad) => {
                 const isPadActive = activePads.has(pad.id);
                 const topPct = pad.row === 0 ? 20.34 : 32.67;
@@ -789,7 +861,7 @@ export default function InteractivePiano() {
                     tabIndex={0}
                     aria-label={pad.name}
                   >
-                    {/* Glowing LED Strike Ring & Feedback */}
+                    {/* Glowing LED Strike Ring */}
                     <div
                       className={`w-full h-full rounded transition-all duration-100 flex items-center justify-center relative overflow-hidden ${
                         isPadActive
@@ -821,7 +893,6 @@ export default function InteractivePiano() {
                   isDraggingJoystickRef.current = true;
                   setPitchBend(0.5);
                   setLastPlayed("🕹️ Pitch Bend +");
-                  spawnBubbles(16.5, 20, "F");
                 }}
                 onPointerUp={() => {
                   isDraggingJoystickRef.current = false;
@@ -870,6 +941,7 @@ export default function InteractivePiano() {
                           : "hover:bg-white/10 group-active:translate-y-0.5"
                       }`}
                     >
+                      {/* Keyboard shortcut label on key */}
                       {showKeyLabels && (
                         <span className="text-[9px] sm:text-[11px] font-mono font-semibold px-1 py-0.5 rounded bg-stone-900/75 text-stone-300 border border-stone-700/60 pointer-events-none mb-1">
                           {key.keyA}
